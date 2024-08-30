@@ -8,6 +8,7 @@ Materia: Estructura de Datos - 2024
 #include <iostream>
 #include <filesystem>
 #include "../model/ListasSimples.h"
+#include "../model/NodoArbol.h"
 
 void obtenerListaArchivos(ListaSimple<std::string>& listaArchivos, std::string directorio) {
     for (const auto& entrada : std::filesystem::directory_iterator(directorio)) {
@@ -89,7 +90,7 @@ bool esDefinicionDeFuncion(std::istream& linea) {
     return false;
 }
 
-void procesarArchivo(const std::string& rutaArchivo, ListaSimple<std::string>& listaFunciones) {
+void procesarArchivo(const std::string& rutaArchivo, NodoArbol*& arbolFunciones) {
     std::ifstream archivo{rutaArchivo};
     if (!archivo.is_open()) {
         std::cout << "No se pudo abrir el archivo " << rutaArchivo << std::endl;
@@ -103,7 +104,10 @@ void procesarArchivo(const std::string& rutaArchivo, ListaSimple<std::string>& l
         if (procesarIdentificador(archivo, tipoRetorno) && procesarIdentificador(archivo, nombreFuncion)) {
             // Tenemos un tipo de retorno y un identificador, es una definición de función?
             if (esDefinicionDeFuncion(archivo) && tipoRetorno != "else" && tipoRetorno != ":") {
-                listaFunciones.Insertar(tipoRetorno + " " + nombreFuncion);
+                std::string fnStr = tipoRetorno + " " + nombreFuncion;
+                if (!arbolFunciones->buscar(arbolFunciones, fnStr)) {
+                    arbolFunciones->insertar(arbolFunciones, fnStr);
+                }
 
                 // Antes de seguir, saltar todo el cuerpo de la función
                 char ch;
@@ -119,16 +123,19 @@ void procesarArchivo(const std::string& rutaArchivo, ListaSimple<std::string>& l
 }
 
 int main(int argc, const char** argv) {
-    ListaSimple<std::string> listaArchivos, listaFunciones;
+    ListaSimple<std::string> listaArchivos;
+    NodoArbol* arbolFunciones;
+
     obtenerListaArchivos(listaArchivos, "/home/kmd/Downloads/proyecto_v21-jun/");
 
     listaArchivos.recorrer([&](Nodo<std::string>* nodo){
         std::cout << "Procesando: " << nodo->getDato() << std::endl;
-        procesarArchivo(nodo->getDato(), listaFunciones);
+        procesarArchivo(nodo->getDato(), arbolFunciones);
     });
 
-    std::cout << "\nFunciones encontradas " << "(" << listaFunciones.Tamano() << "): " << std::endl;
-    listaFunciones.Mostrar();
+    std::cout << "\nFunciones encontradas " << "(" << NodoArbol::tamano(arbolFunciones) << "): " << std::endl;
+    NodoArbol::imprimir(arbolFunciones);
+    std::cout << std::endl;
 
     return 0;
 }
